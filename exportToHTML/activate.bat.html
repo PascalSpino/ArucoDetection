@@ -1,0 +1,50 @@
+<html>
+<head>
+<title>activate.bat</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #a9b7c6;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+activate.bat</font>
+</center></td></tr></table>
+<pre><span class="s0">@echo off</span>
+
+<span class="s0">rem This file is UTF-8 encoded, so we need to update the current code page while executing it</span>
+<span class="s0">for /f &quot;tokens=2 delims=:.&quot; %%a in ('&quot;%SystemRoot%\System32\chcp.com&quot;') do (</span>
+    <span class="s0">set _OLD_CODEPAGE=%%a</span>
+<span class="s0">)</span>
+<span class="s0">if defined _OLD_CODEPAGE (</span>
+    <span class="s0">&quot;%SystemRoot%\System32\chcp.com&quot; 65001 &gt; nul</span>
+<span class="s0">)</span>
+
+<span class="s0">set VIRTUAL_ENV=C:\Users\Pascal Spino 3\PycharmProjects\ArucoDetection\venv</span>
+
+<span class="s0">if not defined PROMPT set PROMPT=$P$G</span>
+
+<span class="s0">if defined _OLD_VIRTUAL_PROMPT set PROMPT=%_OLD_VIRTUAL_PROMPT%</span>
+<span class="s0">if defined _OLD_VIRTUAL_PYTHONHOME set PYTHONHOME=%_OLD_VIRTUAL_PYTHONHOME%</span>
+
+<span class="s0">set _OLD_VIRTUAL_PROMPT=%PROMPT%</span>
+<span class="s0">set PROMPT=(venv) %PROMPT%</span>
+
+<span class="s0">if defined PYTHONHOME set _OLD_VIRTUAL_PYTHONHOME=%PYTHONHOME%</span>
+<span class="s0">set PYTHONHOME=</span>
+
+<span class="s0">if defined _OLD_VIRTUAL_PATH set PATH=%_OLD_VIRTUAL_PATH%</span>
+<span class="s0">if not defined _OLD_VIRTUAL_PATH set _OLD_VIRTUAL_PATH=%PATH%</span>
+
+<span class="s0">set PATH=%VIRTUAL_ENV%\Scripts;%PATH%</span>
+
+<span class="s0">:END</span>
+<span class="s0">if defined _OLD_CODEPAGE (</span>
+    <span class="s0">&quot;%SystemRoot%\System32\chcp.com&quot; %_OLD_CODEPAGE% &gt; nul</span>
+    <span class="s0">set _OLD_CODEPAGE=</span>
+<span class="s0">)</span>
+</pre>
+</body>
+</html>

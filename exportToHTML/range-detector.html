@@ -1,0 +1,128 @@
+<html>
+<head>
+<title>range-detector</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+.s4 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+range-detector</font>
+</center></td></tr></table>
+<pre><span class="s0">#!c:\users\pascal spino 3\pycharmprojects\arucodetection\venv\scripts\python.exe</span>
+<span class="s0"># -*- coding: utf-8 -*-</span>
+
+<span class="s0"># USAGE: You need to specify a filter and &quot;only one&quot; image source</span>
+<span class="s0">#</span>
+<span class="s0"># (python) range-detector --filter RGB --image /path/to/image.png</span>
+<span class="s0"># or</span>
+<span class="s0"># (python) range-detector --filter HSV --webcam</span>
+
+<span class="s2">import </span><span class="s1">cv2</span>
+<span class="s2">import </span><span class="s1">argparse</span>
+<span class="s2">from </span><span class="s1">operator </span><span class="s2">import </span><span class="s1">xor</span>
+
+
+<span class="s2">def </span><span class="s1">callback(value):</span>
+    <span class="s2">pass</span>
+
+
+<span class="s2">def </span><span class="s1">setup_trackbars(range_filter):</span>
+    <span class="s1">cv2.namedWindow(</span><span class="s3">&quot;Trackbars&quot;</span><span class="s2">, </span><span class="s4">0</span><span class="s1">)</span>
+
+    <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">[</span><span class="s3">&quot;MIN&quot;</span><span class="s2">, </span><span class="s3">&quot;MAX&quot;</span><span class="s1">]:</span>
+        <span class="s1">v = </span><span class="s4">0 </span><span class="s2">if </span><span class="s1">i == </span><span class="s3">&quot;MIN&quot; </span><span class="s2">else </span><span class="s4">255</span>
+
+        <span class="s2">for </span><span class="s1">j </span><span class="s2">in </span><span class="s1">range_filter:</span>
+            <span class="s1">cv2.createTrackbar(</span><span class="s3">&quot;%s_%s&quot; </span><span class="s1">% (j</span><span class="s2">, </span><span class="s1">i)</span><span class="s2">, </span><span class="s3">&quot;Trackbars&quot;</span><span class="s2">, </span><span class="s1">v</span><span class="s2">, </span><span class="s4">255</span><span class="s2">, </span><span class="s1">callback)</span>
+
+
+<span class="s2">def </span><span class="s1">get_arguments():</span>
+    <span class="s1">ap = argparse.ArgumentParser()</span>
+    <span class="s1">ap.add_argument(</span><span class="s3">'-f'</span><span class="s2">, </span><span class="s3">'--filter'</span><span class="s2">, </span><span class="s1">required=</span><span class="s2">True,</span>
+                    <span class="s1">help=</span><span class="s3">'Range filter. RGB or HSV'</span><span class="s1">)</span>
+    <span class="s1">ap.add_argument(</span><span class="s3">'-i'</span><span class="s2">, </span><span class="s3">'--image'</span><span class="s2">, </span><span class="s1">required=</span><span class="s2">False,</span>
+                    <span class="s1">help=</span><span class="s3">'Path to the image'</span><span class="s1">)</span>
+    <span class="s1">ap.add_argument(</span><span class="s3">'-w'</span><span class="s2">, </span><span class="s3">'--webcam'</span><span class="s2">, </span><span class="s1">required=</span><span class="s2">False,</span>
+                    <span class="s1">help=</span><span class="s3">'Use webcam'</span><span class="s2">, </span><span class="s1">action=</span><span class="s3">'store_true'</span><span class="s1">)</span>
+    <span class="s1">ap.add_argument(</span><span class="s3">'-p'</span><span class="s2">, </span><span class="s3">'--preview'</span><span class="s2">, </span><span class="s1">required=</span><span class="s2">False,</span>
+                    <span class="s1">help=</span><span class="s3">'Show a preview of the image after applying the mask'</span><span class="s2">,</span>
+                    <span class="s1">action=</span><span class="s3">'store_true'</span><span class="s1">)</span>
+    <span class="s1">args = vars(ap.parse_args())</span>
+
+    <span class="s2">if not </span><span class="s1">xor(bool(args[</span><span class="s3">'image'</span><span class="s1">])</span><span class="s2">, </span><span class="s1">bool(args[</span><span class="s3">'webcam'</span><span class="s1">])):</span>
+        <span class="s1">ap.error(</span><span class="s3">&quot;Please specify only one image source&quot;</span><span class="s1">)</span>
+
+    <span class="s2">if not </span><span class="s1">args[</span><span class="s3">'filter'</span><span class="s1">].upper() </span><span class="s2">in </span><span class="s1">[</span><span class="s3">'RGB'</span><span class="s2">, </span><span class="s3">'HSV'</span><span class="s1">]:</span>
+        <span class="s1">ap.error(</span><span class="s3">&quot;Please speciy a correct filter.&quot;</span><span class="s1">)</span>
+
+    <span class="s2">return </span><span class="s1">args</span>
+
+
+<span class="s2">def </span><span class="s1">get_trackbar_values(range_filter):</span>
+    <span class="s1">values = []</span>
+
+    <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">[</span><span class="s3">&quot;MIN&quot;</span><span class="s2">, </span><span class="s3">&quot;MAX&quot;</span><span class="s1">]:</span>
+        <span class="s2">for </span><span class="s1">j </span><span class="s2">in </span><span class="s1">range_filter:</span>
+            <span class="s1">v = cv2.getTrackbarPos(</span><span class="s3">&quot;%s_%s&quot; </span><span class="s1">% (j</span><span class="s2">, </span><span class="s1">i)</span><span class="s2">, </span><span class="s3">&quot;Trackbars&quot;</span><span class="s1">)</span>
+            <span class="s1">values.append(v)</span>
+
+    <span class="s2">return </span><span class="s1">values</span>
+
+
+<span class="s2">def </span><span class="s1">main():</span>
+    <span class="s1">args = get_arguments()</span>
+
+    <span class="s1">range_filter = args[</span><span class="s3">'filter'</span><span class="s1">].upper()</span>
+
+    <span class="s2">if </span><span class="s1">args[</span><span class="s3">'image'</span><span class="s1">]:</span>
+        <span class="s1">image = cv2.imread(args[</span><span class="s3">'image'</span><span class="s1">])</span>
+
+        <span class="s2">if </span><span class="s1">range_filter == </span><span class="s3">'RGB'</span><span class="s1">:</span>
+            <span class="s1">frame_to_thresh = image.copy()</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">frame_to_thresh = cv2.cvtColor(image</span><span class="s2">, </span><span class="s1">cv2.COLOR_BGR2HSV)</span>
+    <span class="s2">else</span><span class="s1">:</span>
+        <span class="s1">camera = cv2.VideoCapture(</span><span class="s4">0</span><span class="s1">)</span>
+
+    <span class="s1">setup_trackbars(range_filter)</span>
+
+    <span class="s2">while True</span><span class="s1">:</span>
+        <span class="s2">if </span><span class="s1">args[</span><span class="s3">'webcam'</span><span class="s1">]:</span>
+            <span class="s1">ret</span><span class="s2">, </span><span class="s1">image = camera.read()</span>
+
+            <span class="s2">if not </span><span class="s1">ret:</span>
+                <span class="s2">break</span>
+
+            <span class="s2">if </span><span class="s1">range_filter == </span><span class="s3">'RGB'</span><span class="s1">:</span>
+                <span class="s1">frame_to_thresh = image.copy()</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s1">frame_to_thresh = cv2.cvtColor(image</span><span class="s2">, </span><span class="s1">cv2.COLOR_BGR2HSV)</span>
+
+        <span class="s1">v1_min</span><span class="s2">, </span><span class="s1">v2_min</span><span class="s2">, </span><span class="s1">v3_min</span><span class="s2">, </span><span class="s1">v1_max</span><span class="s2">, </span><span class="s1">v2_max</span><span class="s2">, </span><span class="s1">v3_max = get_trackbar_values(range_filter)</span>
+
+        <span class="s1">thresh = cv2.inRange(frame_to_thresh</span><span class="s2">, </span><span class="s1">(v1_min</span><span class="s2">, </span><span class="s1">v2_min</span><span class="s2">, </span><span class="s1">v3_min)</span><span class="s2">, </span><span class="s1">(v1_max</span><span class="s2">, </span><span class="s1">v2_max</span><span class="s2">, </span><span class="s1">v3_max))</span>
+
+        <span class="s2">if </span><span class="s1">args[</span><span class="s3">'preview'</span><span class="s1">]:</span>
+            <span class="s1">preview = cv2.bitwise_and(image</span><span class="s2">, </span><span class="s1">image</span><span class="s2">, </span><span class="s1">mask=thresh)</span>
+            <span class="s1">cv2.imshow(</span><span class="s3">&quot;Preview&quot;</span><span class="s2">, </span><span class="s1">preview)</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">cv2.imshow(</span><span class="s3">&quot;Original&quot;</span><span class="s2">, </span><span class="s1">image)</span>
+            <span class="s1">cv2.imshow(</span><span class="s3">&quot;Thresh&quot;</span><span class="s2">, </span><span class="s1">thresh)</span>
+
+        <span class="s2">if </span><span class="s1">cv2.waitKey(</span><span class="s4">1</span><span class="s1">) &amp; </span><span class="s4">0xFF </span><span class="s2">is </span><span class="s1">ord(</span><span class="s3">'q'</span><span class="s1">):</span>
+            <span class="s2">break</span>
+
+
+<span class="s2">if </span><span class="s1">__name__ == </span><span class="s3">'__main__'</span><span class="s1">:</span>
+    <span class="s1">main()</span>
+</pre>
+</body>
+</html>

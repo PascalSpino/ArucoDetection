@@ -1,0 +1,401 @@
+<html>
+<head>
+<title>Activate.ps1</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #a9b7c6;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Activate.ps1</font>
+</center></td></tr></table>
+<pre><span class="s0">&lt;#</span>
+<span class="s0">.Synopsis</span>
+<span class="s0">Activate a Python virtual environment for the current PowerShell session.</span>
+
+<span class="s0">.Description</span>
+<span class="s0">Pushes the python executable for a virtual environment to the front of the</span>
+<span class="s0">$Env:PATH environment variable and sets the prompt to signify that you are</span>
+<span class="s0">in a Python virtual environment. Makes use of the command line switches as</span>
+<span class="s0">well as the `pyvenv.cfg` file values present in the virtual environment.</span>
+
+<span class="s0">.Parameter VenvDir</span>
+<span class="s0">Path to the directory that contains the virtual environment to activate. The</span>
+<span class="s0">default value for this is the parent of the directory that the Activate.ps1</span>
+<span class="s0">script is located within.</span>
+
+<span class="s0">.Parameter Prompt</span>
+<span class="s0">The prompt prefix to display when this virtual environment is activated. By</span>
+<span class="s0">default, this prompt is the name of the virtual environment folder (VenvDir)</span>
+<span class="s0">surrounded by parentheses and followed by a single space (ie. '(.venv) ').</span>
+
+<span class="s0">.Example</span>
+<span class="s0">Activate.ps1</span>
+<span class="s0">Activates the Python virtual environment that contains the Activate.ps1 script.</span>
+
+<span class="s0">.Example</span>
+<span class="s0">Activate.ps1 -Verbose</span>
+<span class="s0">Activates the Python virtual environment that contains the Activate.ps1 script,</span>
+<span class="s0">and shows extra information about the activation as it executes.</span>
+
+<span class="s0">.Example</span>
+<span class="s0">Activate.ps1 -VenvDir C:\Users\MyUser\Common\.venv</span>
+<span class="s0">Activates the Python virtual environment located in the specified location.</span>
+
+<span class="s0">.Example</span>
+<span class="s0">Activate.ps1 -Prompt &quot;MyPython&quot;</span>
+<span class="s0">Activates the Python virtual environment that contains the Activate.ps1 script,</span>
+<span class="s0">and prefixes the current prompt with the specified string (surrounded in</span>
+<span class="s0">parentheses) while the virtual environment is active.</span>
+
+<span class="s0">.Notes</span>
+<span class="s0">On Windows, it may be required to enable this Activate.ps1 script by setting the</span>
+<span class="s0">execution policy for the user. You can do this by issuing the following PowerShell</span>
+<span class="s0">command:</span>
+
+<span class="s0">PS C:\&gt; Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</span>
+
+<span class="s0">For more information on Execution Policies: </span>
+<span class="s0">https://go.microsoft.com/fwlink/?LinkID=135170</span>
+
+<span class="s0">#&gt;</span>
+<span class="s0">Param(</span>
+    <span class="s0">[Parameter(Mandatory = $false)]</span>
+    <span class="s0">[String]</span>
+    <span class="s0">$VenvDir,</span>
+    <span class="s0">[Parameter(Mandatory = $false)]</span>
+    <span class="s0">[String]</span>
+    <span class="s0">$Prompt</span>
+<span class="s0">)</span>
+
+<span class="s0">&lt;# Function declarations --------------------------------------------------- #&gt;</span>
+
+<span class="s0">&lt;#</span>
+<span class="s0">.Synopsis</span>
+<span class="s0">Remove all shell session elements added by the Activate script, including the</span>
+<span class="s0">addition of the virtual environment's Python executable from the beginning of</span>
+<span class="s0">the PATH variable.</span>
+
+<span class="s0">.Parameter NonDestructive</span>
+<span class="s0">If present, do not remove this function from the global namespace for the</span>
+<span class="s0">session.</span>
+
+<span class="s0">#&gt;</span>
+<span class="s0">function global:deactivate ([switch]$NonDestructive) {</span>
+    <span class="s0"># Revert to original values</span>
+
+    <span class="s0"># The prior prompt:</span>
+    <span class="s0">if (Test-Path -Path Function:_OLD_VIRTUAL_PROMPT) {</span>
+        <span class="s0">Copy-Item -Path Function:_OLD_VIRTUAL_PROMPT -Destination Function:prompt</span>
+        <span class="s0">Remove-Item -Path Function:_OLD_VIRTUAL_PROMPT</span>
+    <span class="s0">}</span>
+
+    <span class="s0"># The prior PYTHONHOME:</span>
+    <span class="s0">if (Test-Path -Path Env:_OLD_VIRTUAL_PYTHONHOME) {</span>
+        <span class="s0">Copy-Item -Path Env:_OLD_VIRTUAL_PYTHONHOME -Destination Env:PYTHONHOME</span>
+        <span class="s0">Remove-Item -Path Env:_OLD_VIRTUAL_PYTHONHOME</span>
+    <span class="s0">}</span>
+
+    <span class="s0"># The prior PATH:</span>
+    <span class="s0">if (Test-Path -Path Env:_OLD_VIRTUAL_PATH) {</span>
+        <span class="s0">Copy-Item -Path Env:_OLD_VIRTUAL_PATH -Destination Env:PATH</span>
+        <span class="s0">Remove-Item -Path Env:_OLD_VIRTUAL_PATH</span>
+    <span class="s0">}</span>
+
+    <span class="s0"># Just remove the VIRTUAL_ENV altogether:</span>
+    <span class="s0">if (Test-Path -Path Env:VIRTUAL_ENV) {</span>
+        <span class="s0">Remove-Item -Path env:VIRTUAL_ENV</span>
+    <span class="s0">}</span>
+
+    <span class="s0"># Just remove the _PYTHON_VENV_PROMPT_PREFIX altogether:</span>
+    <span class="s0">if (Get-Variable -Name &quot;_PYTHON_VENV_PROMPT_PREFIX&quot; -ErrorAction SilentlyContinue) {</span>
+        <span class="s0">Remove-Variable -Name _PYTHON_VENV_PROMPT_PREFIX -Scope Global -Force</span>
+    <span class="s0">}</span>
+
+    <span class="s0"># Leave deactivate function in the global namespace if requested:</span>
+    <span class="s0">if (-not $NonDestructive) {</span>
+        <span class="s0">Remove-Item -Path function:deactivate</span>
+    <span class="s0">}</span>
+<span class="s0">}</span>
+
+<span class="s0">&lt;#</span>
+<span class="s0">.Description</span>
+<span class="s0">Get-PyVenvConfig parses the values from the pyvenv.cfg file located in the</span>
+<span class="s0">given folder, and returns them in a map.</span>
+
+<span class="s0">For each line in the pyvenv.cfg file, if that line can be parsed into exactly</span>
+<span class="s0">two strings separated by `=` (with any amount of whitespace surrounding the =)</span>
+<span class="s0">then it is considered a `key = value` line. The left hand string is the key,</span>
+<span class="s0">the right hand is the value.</span>
+
+<span class="s0">If the value starts with a `'` or a `&quot;` then the first and last character is</span>
+<span class="s0">stripped from the value before being captured.</span>
+
+<span class="s0">.Parameter ConfigDir</span>
+<span class="s0">Path to the directory that contains the `pyvenv.cfg` file.</span>
+<span class="s0">#&gt;</span>
+<span class="s0">function Get-PyVenvConfig(</span>
+    <span class="s0">[String]</span>
+    <span class="s0">$ConfigDir</span>
+<span class="s0">) {</span>
+    <span class="s0">Write-Verbose &quot;Given ConfigDir=$ConfigDir, obtain values in pyvenv.cfg&quot;</span>
+
+    <span class="s0"># Ensure the file exists, and issue a warning if it doesn't (but still allow the function to continue).</span>
+    <span class="s0">$pyvenvConfigPath = Join-Path -Resolve -Path $ConfigDir -ChildPath 'pyvenv.cfg' -ErrorAction Continue</span>
+
+    <span class="s0"># An empty map will be returned if no config file is found.</span>
+    <span class="s0">$pyvenvConfig = @{ }</span>
+
+    <span class="s0">if ($pyvenvConfigPath) {</span>
+
+        <span class="s0">Write-Verbose &quot;File exists, parse `key = value` lines&quot;</span>
+        <span class="s0">$pyvenvConfigContent = Get-Content -Path $pyvenvConfigPath</span>
+
+        <span class="s0">$pyvenvConfigContent | ForEach-Object {</span>
+            <span class="s0">$keyval = $PSItem -split &quot;\s*=\s*&quot;, 2</span>
+            <span class="s0">if ($keyval[0] -and $keyval[1]) {</span>
+                <span class="s0">$val = $keyval[1]</span>
+
+                <span class="s0"># Remove extraneous quotations around a string value.</span>
+                <span class="s0">if (&quot;'&quot;&quot;&quot;.Contains($val.Substring(0, 1))) {</span>
+                    <span class="s0">$val = $val.Substring(1, $val.Length - 2)</span>
+                <span class="s0">}</span>
+
+                <span class="s0">$pyvenvConfig[$keyval[0]] = $val</span>
+                <span class="s0">Write-Verbose &quot;Adding Key: '$($keyval[0])'='$val'&quot;</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+    <span class="s0">}</span>
+    <span class="s0">return $pyvenvConfig</span>
+<span class="s0">}</span>
+
+
+<span class="s0">&lt;# Begin Activate script --------------------------------------------------- #&gt;</span>
+
+<span class="s0"># Determine the containing directory of this script</span>
+<span class="s0">$VenvExecPath = Split-Path -Parent $MyInvocation.MyCommand.Definition</span>
+<span class="s0">$VenvExecDir = Get-Item -Path $VenvExecPath</span>
+
+<span class="s0">Write-Verbose &quot;Activation script is located in path: '$VenvExecPath'&quot;</span>
+<span class="s0">Write-Verbose &quot;VenvExecDir Fullname: '$($VenvExecDir.FullName)&quot;</span>
+<span class="s0">Write-Verbose &quot;VenvExecDir Name: '$($VenvExecDir.Name)&quot;</span>
+
+<span class="s0"># Set values required in priority: CmdLine, ConfigFile, Default</span>
+<span class="s0"># First, get the location of the virtual environment, it might not be</span>
+<span class="s0"># VenvExecDir if specified on the command line.</span>
+<span class="s0">if ($VenvDir) {</span>
+    <span class="s0">Write-Verbose &quot;VenvDir given as parameter, using '$VenvDir' to determine values&quot;</span>
+<span class="s0">}</span>
+<span class="s0">else {</span>
+    <span class="s0">Write-Verbose &quot;VenvDir not given as a parameter, using parent directory name as VenvDir.&quot;</span>
+    <span class="s0">$VenvDir = $VenvExecDir.Parent.FullName.TrimEnd(&quot;\\/&quot;)</span>
+    <span class="s0">Write-Verbose &quot;VenvDir=$VenvDir&quot;</span>
+<span class="s0">}</span>
+
+<span class="s0"># Next, read the `pyvenv.cfg` file to determine any required value such</span>
+<span class="s0"># as `prompt`.</span>
+<span class="s0">$pyvenvCfg = Get-PyVenvConfig -ConfigDir $VenvDir</span>
+
+<span class="s0"># Next, set the prompt from the command line, or the config file, or</span>
+<span class="s0"># just use the name of the virtual environment folder.</span>
+<span class="s0">if ($Prompt) {</span>
+    <span class="s0">Write-Verbose &quot;Prompt specified as argument, using '$Prompt'&quot;</span>
+<span class="s0">}</span>
+<span class="s0">else {</span>
+    <span class="s0">Write-Verbose &quot;Prompt not specified as argument to script, checking pyvenv.cfg value&quot;</span>
+    <span class="s0">if ($pyvenvCfg -and $pyvenvCfg['prompt']) {</span>
+        <span class="s0">Write-Verbose &quot;  Setting based on value in pyvenv.cfg='$($pyvenvCfg['prompt'])'&quot;</span>
+        <span class="s0">$Prompt = $pyvenvCfg['prompt'];</span>
+    <span class="s0">}</span>
+    <span class="s0">else {</span>
+        <span class="s0">Write-Verbose &quot;  Setting prompt based on parent's directory's name. (Is the directory name passed to venv module when creating the virutal environment)&quot;</span>
+        <span class="s0">Write-Verbose &quot;  Got leaf-name of $VenvDir='$(Split-Path -Path $venvDir -Leaf)'&quot;</span>
+        <span class="s0">$Prompt = Split-Path -Path $venvDir -Leaf</span>
+    <span class="s0">}</span>
+<span class="s0">}</span>
+
+<span class="s0">Write-Verbose &quot;Prompt = '$Prompt'&quot;</span>
+<span class="s0">Write-Verbose &quot;VenvDir='$VenvDir'&quot;</span>
+
+<span class="s0"># Deactivate any currently active virtual environment, but leave the</span>
+<span class="s0"># deactivate function in place.</span>
+<span class="s0">deactivate -nondestructive</span>
+
+<span class="s0"># Now set the environment variable VIRTUAL_ENV, used by many tools to determine</span>
+<span class="s0"># that there is an activated venv.</span>
+<span class="s0">$env:VIRTUAL_ENV = $VenvDir</span>
+
+<span class="s0">if (-not $Env:VIRTUAL_ENV_DISABLE_PROMPT) {</span>
+
+    <span class="s0">Write-Verbose &quot;Setting prompt to '$Prompt'&quot;</span>
+
+    <span class="s0"># Set the prompt to include the env name</span>
+    <span class="s0"># Make sure _OLD_VIRTUAL_PROMPT is global</span>
+    <span class="s0">function global:_OLD_VIRTUAL_PROMPT { &quot;&quot; }</span>
+    <span class="s0">Copy-Item -Path function:prompt -Destination function:_OLD_VIRTUAL_PROMPT</span>
+    <span class="s0">New-Variable -Name _PYTHON_VENV_PROMPT_PREFIX -Description &quot;Python virtual environment prompt prefix&quot; -Scope Global -Option ReadOnly -Visibility Public -Value $Prompt</span>
+
+    <span class="s0">function global:prompt {</span>
+        <span class="s0">Write-Host -NoNewline -ForegroundColor Green &quot;($_PYTHON_VENV_PROMPT_PREFIX) &quot;</span>
+        <span class="s0">_OLD_VIRTUAL_PROMPT</span>
+    <span class="s0">}</span>
+<span class="s0">}</span>
+
+<span class="s0"># Clear PYTHONHOME</span>
+<span class="s0">if (Test-Path -Path Env:PYTHONHOME) {</span>
+    <span class="s0">Copy-Item -Path Env:PYTHONHOME -Destination Env:_OLD_VIRTUAL_PYTHONHOME</span>
+    <span class="s0">Remove-Item -Path Env:PYTHONHOME</span>
+<span class="s0">}</span>
+
+<span class="s0"># Add the venv to the PATH</span>
+<span class="s0">Copy-Item -Path Env:PATH -Destination Env:_OLD_VIRTUAL_PATH</span>
+<span class="s0">$Env:PATH = &quot;$VenvExecDir$([System.IO.Path]::PathSeparator)$Env:PATH&quot;</span>
+
+<span class="s0"># SIG # Begin signature block</span>
+<span class="s0"># MIIaHgYJKoZIhvcNAQcCoIIaDzCCGgsCAQExDzANBglghkgBZQMEAgEFADB5Bgor</span>
+<span class="s0"># BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG</span>
+<span class="s0"># KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAwnDYwEHaCQq0n</span>
+<span class="s0"># 8NAvsN7H7BO7/48rXCNwrg891FS5vaCCFBgwggPuMIIDV6ADAgECAhB+k+v7fMZO</span>
+<span class="s0"># WepLmnfUBvw7MA0GCSqGSIb3DQEBBQUAMIGLMQswCQYDVQQGEwJaQTEVMBMGA1UE</span>
+<span class="s0"># CBMMV2VzdGVybiBDYXBlMRQwEgYDVQQHEwtEdXJiYW52aWxsZTEPMA0GA1UEChMG</span>
+<span class="s0"># VGhhd3RlMR0wGwYDVQQLExRUaGF3dGUgQ2VydGlmaWNhdGlvbjEfMB0GA1UEAxMW</span>
+<span class="s0"># VGhhd3RlIFRpbWVzdGFtcGluZyBDQTAeFw0xMjEyMjEwMDAwMDBaFw0yMDEyMzAy</span>
+<span class="s0"># MzU5NTlaMF4xCzAJBgNVBAYTAlVTMR0wGwYDVQQKExRTeW1hbnRlYyBDb3Jwb3Jh</span>
+<span class="s0"># dGlvbjEwMC4GA1UEAxMnU3ltYW50ZWMgVGltZSBTdGFtcGluZyBTZXJ2aWNlcyBD</span>
+<span class="s0"># QSAtIEcyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsayzSVRLlxwS</span>
+<span class="s0"># CtgleZEiVypv3LgmxENza8K/LlBa+xTCdo5DASVDtKHiRfTot3vDdMwi17SUAAL3</span>
+<span class="s0"># Te2/tLdEJGvNX0U70UTOQxJzF4KLabQry5kerHIbJk1xH7Ex3ftRYQJTpqr1SSwF</span>
+<span class="s0"># eEWlL4nO55nn/oziVz89xpLcSvh7M+R5CvvwdYhBnP/FA1GZqtdsn5Nph2Upg4XC</span>
+<span class="s0"># YBTEyMk7FNrAgfAfDXTekiKryvf7dHwn5vdKG3+nw54trorqpuaqJxZ9YfeYcRG8</span>
+<span class="s0"># 4lChS+Vd+uUOpyyfqmUg09iW6Mh8pU5IRP8Z4kQHkgvXaISAXWp4ZEXNYEZ+VMET</span>
+<span class="s0"># fMV58cnBcQIDAQABo4H6MIH3MB0GA1UdDgQWBBRfmvVuXMzMdJrU3X3vP9vsTIAu</span>
+<span class="s0"># 3TAyBggrBgEFBQcBAQQmMCQwIgYIKwYBBQUHMAGGFmh0dHA6Ly9vY3NwLnRoYXd0</span>
+<span class="s0"># ZS5jb20wEgYDVR0TAQH/BAgwBgEB/wIBADA/BgNVHR8EODA2MDSgMqAwhi5odHRw</span>
+<span class="s0"># Oi8vY3JsLnRoYXd0ZS5jb20vVGhhd3RlVGltZXN0YW1waW5nQ0EuY3JsMBMGA1Ud</span>
+<span class="s0"># JQQMMAoGCCsGAQUFBwMIMA4GA1UdDwEB/wQEAwIBBjAoBgNVHREEITAfpB0wGzEZ</span>
+<span class="s0"># MBcGA1UEAxMQVGltZVN0YW1wLTIwNDgtMTANBgkqhkiG9w0BAQUFAAOBgQADCZuP</span>
+<span class="s0"># ee9/WTCq72i1+uMJHbtPggZdN1+mUp8WjeockglEbvVt61h8MOj5aY0jcwsSb0ep</span>
+<span class="s0"># rjkR+Cqxm7Aaw47rWZYArc4MTbLQMaYIXCp6/OJ6HVdMqGUY6XlAYiWWbsfHN2qD</span>
+<span class="s0"># IQiOQerd2Vc/HXdJhyoWBl6mOGoiEqNRGYN+tjCCBKMwggOLoAMCAQICEA7P9DjI</span>
+<span class="s0"># /r81bgTYapgbGlAwDQYJKoZIhvcNAQEFBQAwXjELMAkGA1UEBhMCVVMxHTAbBgNV</span>
+<span class="s0"># BAoTFFN5bWFudGVjIENvcnBvcmF0aW9uMTAwLgYDVQQDEydTeW1hbnRlYyBUaW1l</span>
+<span class="s0"># IFN0YW1waW5nIFNlcnZpY2VzIENBIC0gRzIwHhcNMTIxMDE4MDAwMDAwWhcNMjAx</span>
+<span class="s0"># MjI5MjM1OTU5WjBiMQswCQYDVQQGEwJVUzEdMBsGA1UEChMUU3ltYW50ZWMgQ29y</span>
+<span class="s0"># cG9yYXRpb24xNDAyBgNVBAMTK1N5bWFudGVjIFRpbWUgU3RhbXBpbmcgU2Vydmlj</span>
+<span class="s0"># ZXMgU2lnbmVyIC0gRzQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCi</span>
+<span class="s0"># Yws5RLi7I6dESbsO/6HwYQpTk7CY260sD0rFbv+GPFNVDxXOBD8r/amWltm+YXkL</span>
+<span class="s0"># W8lMhnbl4ENLIpXuwitDwZ/YaLSOQE/uhTi5EcUj8mRY8BUyb05Xoa6IpALXKh7N</span>
+<span class="s0"># S+HdY9UXiTJbsF6ZWqidKFAOF+6W22E7RVEdzxJWC5JH/Kuu9mY9R6xwcueS51/N</span>
+<span class="s0"># ELnEg2SUGb0lgOHo0iKl0LoCeqF3k1tlw+4XdLxBhircCEyMkoyRLZ53RB9o1qh0</span>
+<span class="s0"># d9sOWzKLVoszvdljyEmdOsXF6jML0vGjG/SLvtmzV4s73gSneiKyJK4ux3DFvk6D</span>
+<span class="s0"># Jgj7C72pT5kI4RAocqrNAgMBAAGjggFXMIIBUzAMBgNVHRMBAf8EAjAAMBYGA1Ud</span>
+<span class="s0"># JQEB/wQMMAoGCCsGAQUFBwMIMA4GA1UdDwEB/wQEAwIHgDBzBggrBgEFBQcBAQRn</span>
+<span class="s0"># MGUwKgYIKwYBBQUHMAGGHmh0dHA6Ly90cy1vY3NwLndzLnN5bWFudGVjLmNvbTA3</span>
+<span class="s0"># BggrBgEFBQcwAoYraHR0cDovL3RzLWFpYS53cy5zeW1hbnRlYy5jb20vdHNzLWNh</span>
+<span class="s0"># LWcyLmNlcjA8BgNVHR8ENTAzMDGgL6AthitodHRwOi8vdHMtY3JsLndzLnN5bWFu</span>
+<span class="s0"># dGVjLmNvbS90c3MtY2EtZzIuY3JsMCgGA1UdEQQhMB+kHTAbMRkwFwYDVQQDExBU</span>
+<span class="s0"># aW1lU3RhbXAtMjA0OC0yMB0GA1UdDgQWBBRGxmmjDkoUHtVM2lJjFz9eNrwN5jAf</span>
+<span class="s0"># BgNVHSMEGDAWgBRfmvVuXMzMdJrU3X3vP9vsTIAu3TANBgkqhkiG9w0BAQUFAAOC</span>
+<span class="s0"># AQEAeDu0kSoATPCPYjA3eKOEJwdvGLLeJdyg1JQDqoZOJZ+aQAMc3c7jecshaAba</span>
+<span class="s0"># tjK0bb/0LCZjM+RJZG0N5sNnDvcFpDVsfIkWxumy37Lp3SDGcQ/NlXTctlzevTcf</span>
+<span class="s0"># Q3jmeLXNKAQgo6rxS8SIKZEOgNER/N1cdm5PXg5FRkFuDbDqOJqxOtoJcRD8HHm0</span>
+<span class="s0"># gHusafT9nLYMFivxf1sJPZtb4hbKE4FtAC44DagpjyzhsvRaqQGvFZwsL0kb2yK7</span>
+<span class="s0"># w/54lFHDhrGCiF3wPbRRoXkzKy57udwgCRNx62oZW8/opTBXLIlJP7nPf8m/PiJo</span>
+<span class="s0"># Y1OavWl0rMUdPH+S4MO8HNgEdTCCBTAwggQYoAMCAQICEAQJGBtf1btmdVNDtW+V</span>
+<span class="s0"># UAgwDQYJKoZIhvcNAQELBQAwZTELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lD</span>
+<span class="s0"># ZXJ0IEluYzEZMBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTEkMCIGA1UEAxMbRGln</span>
+<span class="s0"># aUNlcnQgQXNzdXJlZCBJRCBSb290IENBMB4XDTEzMTAyMjEyMDAwMFoXDTI4MTAy</span>
+<span class="s0"># MjEyMDAwMFowcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZ</span>
+<span class="s0"># MBcGA1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hB</span>
+<span class="s0"># MiBBc3N1cmVkIElEIENvZGUgU2lnbmluZyBDQTCCASIwDQYJKoZIhvcNAQEBBQAD</span>
+<span class="s0"># ggEPADCCAQoCggEBAPjTsxx/DhGvZ3cH0wsxSRnP0PtFmbE620T1f+Wondsy13Hq</span>
+<span class="s0"># dp0FLreP+pJDwKX5idQ3Gde2qvCchqXYJawOeSg6funRZ9PG+yknx9N7I5TkkSOW</span>
+<span class="s0"># kHeC+aGEI2YSVDNQdLEoJrskacLCUvIUZ4qJRdQtoaPpiCwgla4cSocI3wz14k1g</span>
+<span class="s0"># GL6qxLKucDFmM3E+rHCiq85/6XzLkqHlOzEcz+ryCuRXu0q16XTmK/5sy350OTYN</span>
+<span class="s0"># kO/ktU6kqepqCquE86xnTrXE94zRICUj6whkPlKWwfIPEvTFjg/BougsUfdzvL2F</span>
+<span class="s0"># sWKDc0GCB+Q4i2pzINAPZHM8np+mM6n9Gd8lk9ECAwEAAaOCAc0wggHJMBIGA1Ud</span>
+<span class="s0"># EwEB/wQIMAYBAf8CAQAwDgYDVR0PAQH/BAQDAgGGMBMGA1UdJQQMMAoGCCsGAQUF</span>
+<span class="s0"># BwMDMHkGCCsGAQUFBwEBBG0wazAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGln</span>
+<span class="s0"># aWNlcnQuY29tMEMGCCsGAQUFBzAChjdodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5j</span>
+<span class="s0"># b20vRGlnaUNlcnRBc3N1cmVkSURSb290Q0EuY3J0MIGBBgNVHR8EejB4MDqgOKA2</span>
+<span class="s0"># hjRodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vRGlnaUNlcnRBc3N1cmVkSURSb290</span>
+<span class="s0"># Q0EuY3JsMDqgOKA2hjRodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vRGlnaUNlcnRB</span>
+<span class="s0"># c3N1cmVkSURSb290Q0EuY3JsME8GA1UdIARIMEYwOAYKYIZIAYb9bAACBDAqMCgG</span>
+<span class="s0"># CCsGAQUFBwIBFhxodHRwczovL3d3dy5kaWdpY2VydC5jb20vQ1BTMAoGCGCGSAGG</span>
+<span class="s0"># /WwDMB0GA1UdDgQWBBRaxLl7KgqjpepxA8Bg+S32ZXUOWDAfBgNVHSMEGDAWgBRF</span>
+<span class="s0"># 66Kv9JLLgjEtUYunpyGd823IDzANBgkqhkiG9w0BAQsFAAOCAQEAPuwNWiSz8yLR</span>
+<span class="s0"># FcgsfCUpdqgdXRwtOhrE7zBh134LYP3DPQ/Er4v97yrfIFU3sOH20ZJ1D1G0bqWO</span>
+<span class="s0"># WuJeJIFOEKTuP3GOYw4TS63XX0R58zYUBor3nEZOXP+QsRsHDpEV+7qvtVHCjSSu</span>
+<span class="s0"># JMbHJyqhKSgaOnEoAjwukaPAJRHinBRHoXpoaK+bp1wgXNlxsQyPu6j4xRJon89A</span>
+<span class="s0"># y0BEpRPw5mQMJQhCMrI2iiQC/i9yfhzXSUWW6Fkd6fp0ZGuy62ZD2rOwjNXpDd32</span>
+<span class="s0"># ASDOmTFjPQgaGLOBm0/GkxAG/AeB+ova+YJJ92JuoVP6EpQYhS6SkepobEQysmah</span>
+<span class="s0"># 5xikmmRR7zCCBkcwggUvoAMCAQICEAM+1e2gZdG4yR38+Spsm9gwDQYJKoZIhvcN</span>
+<span class="s0"># AQELBQAwcjELMAkGA1UEBhMCVVMxFTATBgNVBAoTDERpZ2lDZXJ0IEluYzEZMBcG</span>
+<span class="s0"># A1UECxMQd3d3LmRpZ2ljZXJ0LmNvbTExMC8GA1UEAxMoRGlnaUNlcnQgU0hBMiBB</span>
+<span class="s0"># c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQTAeFw0xODEyMTgwMDAwMDBaFw0yMTEy</span>
+<span class="s0"># MjIxMjAwMDBaMIGDMQswCQYDVQQGEwJVUzEWMBQGA1UECBMNTmV3IEhhbXBzaGly</span>
+<span class="s0"># ZTESMBAGA1UEBxMJV29sZmVib3JvMSMwIQYDVQQKExpQeXRob24gU29mdHdhcmUg</span>
+<span class="s0"># Rm91bmRhdGlvbjEjMCEGA1UEAxMaUHl0aG9uIFNvZnR3YXJlIEZvdW5kYXRpb24w</span>
+<span class="s0"># ggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCqvaRLsnW5buglHGWx2sRM</span>
+<span class="s0"># CMpqt+gflMjw9ZJPphvbE+ig/u8dPiJpVfIvkvN7V/ncnDrtKn67nbh8ld/fSodW</span>
+<span class="s0"># IRbG6bLZFYbSdyJTZ36YyrOOVoBZJk0XS7hFy/IMmiQRXRFQ6ojkIbnM8jdb25Do</span>
+<span class="s0"># uJSTccJhbqSkfXvsDlPenD8+jw7woSskafVqdqq0ggKr33JLGsxp3/aE8wFF/o11</span>
+<span class="s0"># qHt/sc+fWCRJJMCh6PK6oXmH4HSojj4krn5Uu/Prn1VNsBYmxhqSTFnFVZikW/gp</span>
+<span class="s0"># 5BJLCijQPMy+YRGxPM29UExaG706uIk2D5B8WZ/3rNVO73dxn6vvEyltfJ8g4YqE</span>
+<span class="s0"># cxpG5nyKG5YjHeAj1YcMVfp8EpHz4eWF2RqIERYixdGjL4RBTIrvNSz4Wo6jaxFi</span>
+<span class="s0"># 21uzwxMX1gMoVnDI+Of1af6AsZ3k1QRXI28P1BUYES03u/Hztt24lQHwXgPKUSwy</span>
+<span class="s0"># 1lN+PD9q7oCY6ead4rlRypIm7BHJloY2TvLeqPTq63H4dNOoeCL3vlSnF/KvACqS</span>
+<span class="s0"># i+hkRYFVKm+S7w9WGQFdwuY17owQeUWJoyiIAMB4qZflEVGQ35WuZgZODjNqPF90</span>
+<span class="s0"># d4hjxO8t/jy1N+adAl33yB4lC//TU1TL8XG7CoC5ORp7Pk2XUvE/QKlMeGCHM7gV</span>
+<span class="s0"># EPiK1PbCpOHiOmiPD1BmewIDAQABo4IBxTCCAcEwHwYDVR0jBBgwFoAUWsS5eyoK</span>
+<span class="s0"># o6XqcQPAYPkt9mV1DlgwHQYDVR0OBBYEFPwqv37Uvqzzgpykz3siATu4jwfyMA4G</span>
+<span class="s0"># A1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzB3BgNVHR8EcDBuMDWg</span>
+<span class="s0"># M6Axhi9odHRwOi8vY3JsMy5kaWdpY2VydC5jb20vc2hhMi1hc3N1cmVkLWNzLWcx</span>
+<span class="s0"># LmNybDA1oDOgMYYvaHR0cDovL2NybDQuZGlnaWNlcnQuY29tL3NoYTItYXNzdXJl</span>
+<span class="s0"># ZC1jcy1nMS5jcmwwTAYDVR0gBEUwQzA3BglghkgBhv1sAwEwKjAoBggrBgEFBQcC</span>
+<span class="s0"># ARYcaHR0cHM6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzAIBgZngQwBBAEwgYQGCCsG</span>
+<span class="s0"># AQUFBwEBBHgwdjAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29t</span>
+<span class="s0"># ME4GCCsGAQUFBzAChkJodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNl</span>
+<span class="s0"># cnRTSEEyQXNzdXJlZElEQ29kZVNpZ25pbmdDQS5jcnQwDAYDVR0TAQH/BAIwADAN</span>
+<span class="s0"># BgkqhkiG9w0BAQsFAAOCAQEAS3WhLbVfRrGJp8+PJj6+ViqNYq5S79gW5hYgSrqJ</span>
+<span class="s0"># FFoVps0OGP1EEVAX9omITmaytAQ58APr/qBVIf3WVlYGqDo0R4b1P1JduIA+8n0I</span>
+<span class="s0"># RYWx2RdSuNtaG8Ke5nuSpS5TkEC6YjVBFuliBkvdQD6JleSaNsaHWWfytSFYjFsF</span>
+<span class="s0"># gvhKDaeqkHjinsJQViQ+P8xvBTaC8FXaleOPlZqyShm2wAIy/mDjYE2hUuhECL56</span>
+<span class="s0"># /qzTs8634m0dEibzuVPK5zzCHSzBM9TCSwpstTVl2P0Kmq3Nee5UTTDnR7Em9FIr</span>
+<span class="s0"># dW3iD7S+KCkjeo+YN2mR/37gy/LRcw1yqu2HDbRH4+QiUzGCBVwwggVYAgEBMIGG</span>
+<span class="s0"># MHIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsT</span>
+<span class="s0"># EHd3dy5kaWdpY2VydC5jb20xMTAvBgNVBAMTKERpZ2lDZXJ0IFNIQTIgQXNzdXJl</span>
+<span class="s0"># ZCBJRCBDb2RlIFNpZ25pbmcgQ0ECEAM+1e2gZdG4yR38+Spsm9gwDQYJYIZIAWUD</span>
+<span class="s0"># BAIBBQCggZgwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIB</span>
+<span class="s0"># CzEOMAwGCisGAQQBgjcCARUwLAYKKwYBBAGCNwIBDDEeMBygGoAYAFAAeQB0AGgA</span>
+<span class="s0"># bwBuACAAMwAuADkALgAwMC8GCSqGSIb3DQEJBDEiBCAGueLiZxG/uwwkezGlE6NG</span>
+<span class="s0"># ik7PbC5BWsmef6UPtfvL6DANBgkqhkiG9w0BAQEFAASCAgCmlnDsuHhfTf6Nrazl</span>
+<span class="s0"># nJs0izDY16fS2h6UJ0ihdy48JIUQAWSVIcvnYtkZ42IYgT3JIHalcv6qPQIElpaL</span>
+<span class="s0"># CCeR1HWT2qQLLJbQxQv3J0gzffrJkn+1u5FB3y9WCpQLS7PhfItXlZhWMjpbLNIU</span>
+<span class="s0"># miJ0xstY/jyzY1Kt9HyF6ZXqo3BMSCV6mbZLXxlanNAuptxbJEzqOenNL0IQ2Vx8</span>
+<span class="s0"># 3UlBnqGnRfkyB9TjF73SHCiF44V3PDOo/HIxzM43v6H3Qznn5pdVYUf8w02k+jFS</span>
+<span class="s0"># jXRflnKZDd95PVNTGXUGpr2fE1rQcK+a09NkyXtKQQizKPauZ1oHjksV0GvN4h5z</span>
+<span class="s0"># Vg0wYJN+akYzCPY7q+tL4hDmPxXgmZgBifqyDT/5g6FamNsjmAvhCAeqkWNhq/qb</span>
+<span class="s0"># ecRPBDI6p3N1cFAEQmMsswN4cpK7tmG4mOKjJozc+yn2K7e67amJc6rI1FFJ4Z6Q</span>
+<span class="s0"># bbMK6wDWw4hr0FZu/UuTr151m3gFXuRWQmE2z8seKT/CS/Qu+FPwPdB0Y4KJrdzu</span>
+<span class="s0"># i5xWtlAfO53Bbvj0zI+f+MU5MBSw/uz/N/UltMDRGEz1NxiXDyxI9dzZwLItm7LC</span>
+<span class="s0"># f6fAlTN2I8c/FJ0mVRysli1clwuggdqOMTsjyBxTANXaxMg3O7BkbZVt2MFASnuF</span>
+<span class="s0"># TjoSqcY1rryaCs3Tr5dXnIIDaKGCAgswggIHBgkqhkiG9w0BCQYxggH4MIIB9AIB</span>
+<span class="s0"># ATByMF4xCzAJBgNVBAYTAlVTMR0wGwYDVQQKExRTeW1hbnRlYyBDb3Jwb3JhdGlv</span>
+<span class="s0"># bjEwMC4GA1UEAxMnU3ltYW50ZWMgVGltZSBTdGFtcGluZyBTZXJ2aWNlcyBDQSAt</span>
+<span class="s0"># IEcyAhAOz/Q4yP6/NW4E2GqYGxpQMAkGBSsOAwIaBQCgXTAYBgkqhkiG9w0BCQMx</span>
+<span class="s0"># CwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yMDEwMDUxNTQ1MjlaMCMGCSqG</span>
+<span class="s0"># SIb3DQEJBDEWBBRra0P9KGMrllTs7BUKY5/9M2+k5DANBgkqhkiG9w0BAQEFAASC</span>
+<span class="s0"># AQBjfGRZMDtH8pawNQ1Go21uB4YZ34oTDuo0/aYGPVBORJhMtFseh+oMPSbw1PZq</span>
+<span class="s0"># pzA0ZmKU2GXLyC2pRRiScVG3bV7Maeq8jZq95dZpzGG4vlfhAfb1u/d6NTTq4+53</span>
+<span class="s0"># 5zVqwmsCJeSvOymE18MiM+eC9JVYK6OR8km2d0/lqi+q+/4L/4XkpxS7z+2FwpnS</span>
+<span class="s0"># 1/HgIbgsvojt8viDjpfc0vkiWS8bymyTokFwhES4v2YGI+FqXbWdAeQR+rAlKVtd</span>
+<span class="s0"># /slNskA83aeom7iz6jc3sQs2frWt3Rrxux2YSREFEY0508ZzlI0iTLLpflVaewxg</span>
+<span class="s0"># VbwCut7qb3zyI8S5Sl4milVC</span>
+<span class="s0"># SIG # End signature block</span>
+</pre>
+</body>
+</html>
